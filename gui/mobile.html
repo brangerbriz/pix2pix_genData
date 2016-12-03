@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> GUI: pix2pix genData </title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+
+			html, body {
+				padding: 0;
+				margin: 0;
+			}
+
+			#opacity {
+				width: 100%;
+				margin: 0;
+			}
+
+			button {
+				display: block;
+				width: 100%;
+				margin:50px 0px;
+				padding: 25px;
+			}	
+
+		</style>
+	</head>
+	<body>
+
+		<section id="controls">
+
+			<br><br><br>
+			
+			<input type="range"  min="0" max="100" id="opacity" />
+			
+			<button id="next"> next frame </button>
+
+			<button id="random"> random frame </button>
+
+			<button id="save"> save image </button>
+
+		</section>
+		
+		<script>
+
+			var script = document.createElement('script');
+			script.src = location.origin+"/socket.io/socket.io.js";			
+			var first = document.getElementsByTagName('script')[0];
+			first.parentNode.insertBefore( script, first );
+			script.onload = function(){
+
+				var socket = io.connect(location.origin);
+
+				var opacity = document.querySelector('#opacity');
+				var next = document.querySelector('#next');
+				var random = document.querySelector('#random');
+				var save = document.querySelector('#save');
+
+				opacity.addEventListener('change',function(){
+					var o = this.value/100;
+					socket.emit('opacity',o);
+				});
+
+				next.addEventListener('click',function(){
+					socket.emit('next');
+				});
+
+				random.addEventListener('click',function(){
+					socket.emit('random');
+				});
+
+				save.addEventListener('click',function(){
+					socket.emit('save');
+				});
+
+			}
+
+			
+		
+		</script>
+
+	</body>
+</html>

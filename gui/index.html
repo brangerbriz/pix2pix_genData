@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> GUI: pix2pix genData </title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="controls.css">
+		<style>
+
+			#nfo {
+				position: absolute;
+				left:0px; bottom:0px; z-index: 3;
+				background-color: rgba(0,0,0,0.7);
+				width:100%; height: 100%;
+				color:#fff;
+				font-family: monospace;
+			}
+			#nfo canvas {
+				margin: 30px auto;
+				display: block;
+				border: 15px solid #fff;
+			}
+			#nfo div {
+				text-align: center;
+				margin: 10px 0px;
+				cursor: pointer;
+				text-decoration: underline;
+			}
+			#nfo button {
+				width:100px;
+				display: block;
+				margin:10px auto;
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<section id="nfo"></section>
+
+		<section id="controls">
+
+			<input type="range"  min="0" max="100" id="opacity" />
+
+			<button id="next"> next frame </button>
+
+			<button id="random"> random frame </button>
+
+			<button id="save"> save image </button>
+
+			<button id="qrCode"> show QR code </button>
+
+		</section>
+		
+		<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+		<script src="http://localhost:3000/qrlib"></script>
+		<script>
+
+			var socket = io.connect("http://localhost:3000");
+			// var websocket = io.connect("http://localhost:6969");
+
+			socket.on('ip',function(ips){
+				updateNtroNfo(ips, 0);
+			});
+
+			function updateNtroNfo(ips,num) {
+				var nfo = document.querySelector('#nfo');
+				while (nfo.hasChildNodes()) {
+					nfo.removeChild(nfo.lastChild);
+				}
+
+				var canvas = document.createElement('canvas');
+				nfo.appendChild(canvas);
+
+				var qr = new QRious({
+					// via: https://github.com/neocotic/qrious
+					element: canvas,
+					value: 'http://' + ips[num].addr + ':3000/mobile'
+				});				
+
+				for (var i = 0; i < ips.length; i++) {
+					let n = i;
+					var div = document.createElement('div');
+					div.textContent += ips[i].name;
+					div.textContent += " : ";
+					div.textContent += ips[i].addr+":3000/mobile";
+					div.onclick = function(){ updateNtroNfo(ips,n); }
+					nfo.appendChild(div);
+				}
+
+				var close = document.createElement('button');
+				close.textContent = "ready?"
+				close.onclick = function(){ nfo.style.display="none" };
+				nfo.appendChild(close);
+
+			}
+
+			// controls -------------------------------------
+
+			var opacity = document.querySelector('#opacity');
+			var next = document.querySelector('#next');
+			var random = document.querySelector('#random');
+			var save = document.querySelector('#save');
+			var qrCode = document.querySelector('#qrCode');
+
+			opacity.addEventListener('change',function(){
+				var o = this.value/100;
+				socket.emit('opacity',o);
+			});
+
+			next.addEventListener('click',function(){
+				socket.emit('next');
+			});
+
+			random.addEventListener('click',function(){
+				socket.emit('random');
+			});
+
+			save.addEventListener('click',function(){
+				socket.emit('save');
+			});
+
+			qrCode.addEventListener('click',function(){
+				nfo.style.display="block";
+			});
+		
+		</script>
+
+	</body>
+</html>

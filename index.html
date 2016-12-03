@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> pix2pix genData </title>
+		<meta charset="utf-8">
+		<style>
+			#counter {
+				position: absolute;
+    			right: 10px;
+    			font-size: 24px;
+			}	
+		</style>
+	</head>
+	<body>
+		
+		<!-- <section id="counter"></section>		 -->
+	 	
+		<script src="js/Vid2Canvas.js"></script>
+		<script src="js/FilmStrip.js"></script>
+		<script>
+
+			// for : https://phillipi.github.io/pix2pix/
+			// #.jpg
+			// 256x256
+
+			var targetSize 	= prompt('what size should the images be', '256');
+
+			var fs 			= require('fs');
+			var nw			= require('nw.gui');
+			var win 		= nw.Window.get();	
+			win.showDevTools();
+			// var io 		= require("socket.io").listen(6969);	
+			var express 	= require('express');
+			var app 		= express();
+			var http 		= require('http').Server(app);
+			var io 			= require('socket.io')(http);
+
+
+			// Vid to Canvas Setup ----------------------------------------------------------------
+			// ------------------------------------------------------------------------------------
+			// ------------------------------------------------------------------------------------
+
+			var filepath 	= prompt("path to video file","videos/shingy.ogv");
+
+			var file = new Vid2Canvas({
+				src: filepath,
+				stepInterval: 12, // each step will be 1/12 of a second
+				// stepInterval: 0.25, // each step will be 4 seconds				
+			},function(){
+				
+				// conform to target size
+				var x=0, y=0, w, h;
+				if( file.video.width < file.video.height ){
+					w = targetSize;
+					h = w / file.aspectRatio;
+					file.resizeTo(w,h);					
+				} else {
+					h = targetSize;
+					w = h / file.aspectRatio;
+					file.resizeTo(w,h);					
+				}	
+				if( file.width > targetSize ){
+					x = -((file.width-targetSize)/2);
+				} 
+				else if( file.height > targetSize ){
+					y = -((file.height-targetSize)/2);
+				}
+				file.cropTo(x,y,targetSize,targetSize);			
+
+				// append to body && apply CSS
+				file.appendTo('body');				
+				file.css({
+					position: 'absolute',
+					top:'0px', left:'0px',
+					width:'100%', height: '100%',
+					zIndex: '1'
+				});
+
+				// start loop
+				run();
+
+			});		
+
+
+			var cam = new Vid2Canvas({
+				src: 'camera',
+				deviceId: '1801e5a0d92bf81d9f77d7fc245dbca5016a0242a26487907ec99762d42c29d5'
+				// deviceId aquired via: Vid2Canvas.logDevices()
+			}, function(){
+
+				// conform to target size
+				var x=0, y=0, w, h;
+				if( cam.video.width < cam.video.height ){
+					w = targetSize;
+					h = w / cam.aspectRatio;	
+					cam.resizeTo(w,h);					
+				} else {
+					h = targetSize;
+					w = h / cam.aspectRatio;
+					cam.resizeTo(w,h);					
+				}	
+				if( cam.width > targetSize ){
+					x = -((cam.width-targetSize)/2);
+				} 
+				else if( cam.height > targetSize ){
+					y = -((cam.height-targetSize)/2);					
+				}
+				cam.cropTo(x,y,targetSize,targetSize);
+
+				// conform app window to cam resolution
+				win.on('resize', resize );
+				setTimeout(function(){ win.width=Math.round(cam.canvas.width)},1000);
+
+				// append to body && apply CSS
+				cam.appendTo('body');
+				cam.css({
+					position: 'absolute',
+					top:'0px', left:'0px',
+					width:'100%', height: '100%',
+					zIndex: '2', opacity: '0.5'
+				});
+
+				// start loop
+				run();
+
+			});			
+			
+
+
+			// Serve UI ( express + sockets ) -----------------------------------------------------
+			// ------------------------------------------------------------------------------------
+			// ------------------------------------------------------------------------------------
+
+			var os 			= require('os');
+			var ifaces 		= os.networkInterfaces();
+			var ips			= []; // get local ip addresses
+
+			Object.keys(ifaces).forEach(function (ifname) {
+				// via: http://stackoverflow.com/a/8440736/1104148
+				var alias = 0;
+				ifaces[ifname].forEach(function (iface) {
+					if ('IPv4' !== iface.family || iface.internal !== false) {
+						// skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+						return;
+					}
+					if (alias >= 1) {
+						// this single interface has multiple ipv4 addresses
+						ips.push( { name:ifname, alias:alias, addr:iface.address } );
+					} else {
+						// this interface has only one ipv4 adress
+						ips.push( { name:ifname, addr:iface.address } );
+					}
+					++alias;
+			  	});
+
+			});		
+
+			app.use('/mobile', express.static('gui/mobile.html'));
+			app.use('/gui', express.static('gui'));
+			app.use('/qrlib',express.static('js/libs/qrious.js'));
+
+			io.on('connection', function(socket){
+				console.log('a user connected');
+
+				socket.emit('ip',ips);
+
+				socket.on('opacity',function(opac){
+					cam.css({ opacity: opac });
+				});
+
+				socket.on('next',function(){
+					next();
+				});
+
+				socket.on('random',function(){
+					randomFrame();
+				});
+
+				socket.on('save',function(){
+					save();
+				});
+
+				socket.on('disconnect', function(){
+					console.log('user disconnected');
+				});
+			});
+
+			http.listen(3000, function(){
+				console.log('listening on *:3000');
+			});
+
+			nw.Window.open('gui/index.html');	
+
+
+			// DRAW LOOP --------------------------------------------------------------------------
+			// ------------------------------------------------------------------------------------
+			// ------------------------------------------------------------------------------------
+
+			// var counter = document.querySelector('#counter');
+			// var wait = 0;
+			// var count = 0;
+			var fileNum = 0;
+			var strip; 	// a/b canvas that saves images
+			var resizeHold = false;
+			var started = false;
+
+			function resize(){
+				if( !resizeHold ){
+					setTimeout( function(){
+						win.height = Math.round( win.width / cam.aspectRatio );
+						resizeHold = false;
+					},100);					
+				} 
+				resizeHold = true;
+			}
+			
+			function run(){
+				if( file.ready && cam.ready ){
+					started = true;
+					// instantiate film strip which saves images
+					strip = new FilmStrip({ 
+						srcs:[ file.canvas, cam.canvas ] 
+					});
+					// start the draw loop
+					draw();
+				}
+			}
+
+			function next(){
+				file.step(); 
+			}
+
+			function randomFrame(){
+				file.randomFrame(); 
+			}
+
+			function save(){
+				var data = strip.getFrameData();					
+				var buff = new Buffer( data, 'base64' );
+				fs.writeFile('data/'+fileNum+".png", buff );
+				fileNum++;
+			}
+
+			function draw(){
+				requestAnimationFrame( draw );
+
+				// wait++;
+				// if( wait > 60 ){ wait=0; count++; }
+				// if( count > 3 ){ count=0; next(); }
+				// counter.textContent = count;
+
+				file.update();
+				cam.update();
+			}
+
+
+
+
+		</script>
+	</body>
+</html>

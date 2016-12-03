@@ -1,0 +1,17 @@
+{
+  "name": "pix2pix_genData",
+  "version": "1.0.0",
+  "description": "create pix2pix training data",
+  "main": "index.html",
+  "scripts": {
+    "start": "./node_modules/nw/bin/nw .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "nick briz",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "express": "^4.14.0",
+    "nw": "0.16.1-sdk",
+    "socket.io": "^1.7.1"
+  }
+}
