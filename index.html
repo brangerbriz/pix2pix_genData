@@ -23,7 +23,9 @@
 			// #.jpg
 			// 256x256
 
-			var targetSize 	= prompt('what size should the images be', '256');
+			var settings 	= require('./js/config');
+
+			var targetSize 	= prompt('what size should the images be', settings.targetSize);
 
 			var fs 			= require('fs');
 			var nw			= require('nw.gui');
@@ -40,7 +42,7 @@
 			// ------------------------------------------------------------------------------------
 			// ------------------------------------------------------------------------------------
 
-			var filepath 	= prompt("path to video file","videos/shingy.ogv");
+			var filepath 	= prompt("path to video file",settings.videoPath);
 
 			var file = new Vid2Canvas({
 				src: filepath,
@@ -84,7 +86,7 @@
 
 			var cam = new Vid2Canvas({
 				src: 'camera',
-				deviceId: '1801e5a0d92bf81d9f77d7fc245dbca5016a0242a26487907ec99762d42c29d5'
+				deviceId: settings.deviceId,
 				// deviceId aquired via: Vid2Canvas.logDevices()
 			}, function(){
 
@@ -109,7 +111,7 @@
 
 				// conform app window to cam resolution
 				win.on('resize', resize );
-				setTimeout(function(){ win.width=Math.round(cam.canvas.width)},1000);
+				setTimeout(function(){ win.width=parseInt(targetSize)},1000);
 
 				// append to body && apply CSS
 				cam.appendTo('body');
@@ -207,7 +209,8 @@
 			function resize(){
 				if( !resizeHold ){
 					setTimeout( function(){
-						win.height = Math.round( win.width / cam.aspectRatio );
+						// win.height = Math.round( win.width / cam.aspectRatio ) + 64;
+						win.height = win.width; // keep square
 						resizeHold = false;
 					},100);					
 				} 
