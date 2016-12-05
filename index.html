@@ -47,27 +47,24 @@
 			var file = new Vid2Canvas({
 				src: filepath,
 				stepInterval: 12, // each step will be 1/12 of a second
-				// stepInterval: 0.25, // each step will be 4 seconds				
+				// stepInterval: 0.25, // each step will be 4 seconds	
+				width: targetSize,
+				height: targetSize			
 			},function(){
 				
 				// conform to target size
-				var x=0, y=0, w, h;
-				if( file.video.width < file.video.height ){
-					w = targetSize;
-					h = w / file.aspectRatio;
-					file.resizeTo(w,h);					
-				} else {
-					h = targetSize;
-					w = h / file.aspectRatio;
-					file.resizeTo(w,h);					
-				}	
-				if( file.width > targetSize ){
-					x = -((file.width-targetSize)/2);
-				} 
-				else if( file.height > targetSize ){
-					y = -((file.height-targetSize)/2);
-				}
-				file.cropTo(x,y,targetSize,targetSize);			
+				var x, y, w, h;
+				if( file.videoWidth > targetSize ){
+					x = (file.videoWidth-targetSize)/2;	
+				} else { x = 0; }
+				// if( file.videoHeight > targetSize ){
+				// 	y = (file.videoHeight-targetSize)/2;
+				// } else { y = 0; }
+				y = 0;
+				rw = file.videoWidth - x;
+				rh = file.videoHeight - y;
+				largestSquare = ( rw > rh ) ? rh : rw;
+				file.cropTo(x,y,largestSquare,largestSquare);
 
 				// append to body && apply CSS
 				file.appendTo('body');				
@@ -87,27 +84,24 @@
 			var cam = new Vid2Canvas({
 				src: 'camera',
 				deviceId: settings.deviceId,
+				width: targetSize,
+				height: targetSize
 				// deviceId aquired via: Vid2Canvas.logDevices()
 			}, function(){
 
 				// conform to target size
-				var x=0, y=0, w, h;
-				if( cam.video.width < cam.video.height ){
-					w = targetSize;
-					h = w / cam.aspectRatio;	
-					cam.resizeTo(w,h);					
-				} else {
-					h = targetSize;
-					w = h / cam.aspectRatio;
-					cam.resizeTo(w,h);					
-				}	
-				if( cam.width > targetSize ){
-					x = -((cam.width-targetSize)/2);
-				} 
-				else if( cam.height > targetSize ){
-					y = -((cam.height-targetSize)/2);					
-				}
-				cam.cropTo(x,y,targetSize,targetSize);
+				var x, y, w, h;
+				if( cam.videoWidth > targetSize ){
+					x = (cam.videoWidth-targetSize)/2;	
+				} else { x = 0; }
+				// if( cam.videoHeight > targetSize ){
+				// 	y = (cam.videoHeight-targetSize)/2;
+				// } else { y = 0; }
+				y = 0
+				rw = cam.videoWidth - x;
+				rh = cam.videoHeight - y;
+				largestSquare = ( rw > rh ) ? rh : rw;
+				cam.cropTo(x,y,largestSquare,largestSquare);
 
 				// conform app window to cam resolution
 				win.on('resize', resize );

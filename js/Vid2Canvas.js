@@ -69,26 +69,12 @@ class Vid2Canvas {
 
 		// create video element 
 		this.video = document.createElement('video');
-		//
-		if( typeof config.width !== "undefined"){
-			if( config.height !== "undefined" ){
-				this.video.width  = config.width;
-				this.video.height = config.height;
-			} else {				
-				this.video.width  = config.width;
-				this.video.height = 0; // temporary 0, tbd after video.src ready
-			}
-		} 
-		else {
-			// arbitrary 4/3 aspect ratio
-			this.video.width  = 720;
-			this.video.height = 540;
-		}
 		
 		// create canvas element
 		this.canvas = document.createElement('canvas');
-		// this.canvas.width 	= this.video.width;
-		// this.canvas.height 	= this.video.height;
+
+
+		// set params ---------------------------------
 		this.ctx = this.canvas.getContext( '2d' );	
 		//
 		this.sx 		= (typeof config.cropX!=="undefined") ? config.cropX : 0;
@@ -96,11 +82,25 @@ class Vid2Canvas {
 		this.sWidth 	= (typeof config.cropW!=="undefined") ? config.cropW : this.video.width;
 		this.sHeight 	= (typeof config.cropH!=="undefined") ? config.cropH : this.video.height;
 		//
-		if( typeof config.cropH!=="undefined" ) this.cropping=true;
-		this.canvas.width 	= (this.video.width<this.sWidth) ? this.video.width : this.sWidth;
-		this.canvas.height  = (this.video.height<this.sHeight) ? this.video.height : this.sHeight;
-				
+		// if( typeof config.cropH!=="undefined" ) this.cropping=true;
+		if( typeof config.cropX!=="undefined" ) this.cropping=true;
+		// this.canvas.width 	= (this.video.width<this.sWidth) ? this.video.width : this.sWidth;
+		// this.canvas.height  = (this.video.height<this.sHeight) ? this.video.height : this.sHeight;
 
+		if( typeof config.width !== "undefined"){
+			if( config.height !== "undefined" ){
+				this.canvas.width  = config.width;
+				this.canvas.height = config.height;
+			} else {				
+				this.canvas.width  = config.width;
+				this.canvas.height = 0; // temporary 0, tbd after video.src ready
+			}
+		} 
+		else {
+			this.canvas.width  = this.video.width;//720;
+			this.canvas.height = this.video.height;//540;
+		}
+		
 
 
 
@@ -169,6 +169,22 @@ class Vid2Canvas {
 		return this.canvas.height;
 	}
 
+	set videoWidth(v){
+		throw new Error('Vid2Canvas: videoWidth is read-only')
+	}
+
+	get videoWidth(){
+		return this.video.videoWidth;
+	}
+
+	set videoHeight(v){
+		throw new Error('Vid2Canvas: videoHeight is read-only')
+	}
+
+	get videoHeight(){
+		return this.video.videoHeight;
+	}
+
 
 	// -------------------------- private --------------------------
 
@@ -180,14 +196,14 @@ class Vid2Canvas {
 			
 			this.aspectRatio = this.video.videoWidth/this.video.videoHeight;
 
-			if( this.video.height == 0 ){				
-				this.video.height = this.video.width / this.aspectRatio;				
-				if( this.cropping ){					
-					this.canvas.height = this.sHeight
-				} else {
-					this.sHeight 		= this.video.height;
-					this.canvas.height 	= this.video.height;
-				}
+			if( this.canvas.height == 0 ){				
+				this.canvas.height = this.video.width / this.aspectRatio;				
+				// if( this.cropping ){					
+				// 	this.canvas.height = this.sHeight
+				// } else {
+				// 	this.sHeight 		= this.video.height;
+				// 	this.canvas.height 	= this.video.height;
+				// }
 			}
 
 			// read for call back ---------------------------
@@ -246,12 +262,19 @@ class Vid2Canvas {
 			// this.ctx.drawImage( this.video, 0, 0, this.canvas.width, this.canvas.height );
 			// see: https://mdn.mozillademos.org/files/225/Canvas_drawimage.jpg
 			if( this.cropping ){
-				this.ctx.drawImage(this.video, 
-					this.sx, this.sy, this.sWidth, this.sHeight, 
-					0, 0, this.sWidth, this.sHeight);
+				this.ctx.drawImage(
+					this.video, 
+					parseFloat(this.sx), parseFloat(this.sy), 
+					parseFloat(this.sWidth), parseFloat(this.sHeight), 
+					0, 0, this.canvas.width, this.canvas.height
+				);
 			} else {
-				this.ctx.drawImage(this.video, 
-					this.sx, this.sy, this.sWidth, this.sHeight);
+				this.ctx.drawImage(
+					this.video, 
+					0, 0, this.canvas.width, this.canvas.height
+					// parseFloat(this.sx), parseFloat(this.sy), 
+					// parseFloat(this.sWidth), parseFloat(this.sHeight)
+				);
 			}
 			
 		}
@@ -292,18 +315,19 @@ class Vid2Canvas {
 			if( typeof h !== "undefined" ){
 				// this.video.width  = w;
 				// this.video.height = h;
-				// this.canvas.width = w;
-				// this.canvas.height = h;
-				this.cropTo( undefined, undefined, w, h );
-			} else {				
+				this.canvas.width = w;
+				this.canvas.height = h;
+				// this.cropTo( undefined, undefined, w, h );
+			} else {	
+				throw new Error('Vid2Canvas: you havn\'t specified a desired height value');			
 				// this.video.width  = w;
 				// this.video.height = this.video.width / this.aspectRatio;
 				// this.canvas.width = w;
 				// this.canvas.height = this.canvas.width / this.aspectRatio;
-				this.cropTo( undefined, undefined, w, this.canvas.width / this.aspectRatio );
+				// this.cropTo( undefined, undefined, w, this.canvas.width / this.aspectRatio );
 			}			
 		} else {
-			throw new Error('Vid2Canvas: you must specify at least a width value .resizeTo(width,height)');
+			throw new Error('Vid2Canvas: you havn\'t specified a desired width or height value');
 		}
 	}
 
@@ -314,8 +338,8 @@ class Vid2Canvas {
 		this.sHeight 	= (typeof h!=="undefined") ? h : this.sHeight;
 		// if(typeof x!=="undefined" || typeof w!=="undefined") 
 		this.cropping = true;
-		this.canvas.width = this.sWidth;
-		this.canvas.height = this.sHeight;
+		// this.canvas.width = this.sWidth;
+		// this.canvas.height = this.sHeight;
 	}
 
 
