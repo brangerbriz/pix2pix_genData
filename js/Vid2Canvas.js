@@ -67,6 +67,9 @@ class Vid2Canvas {
 
 		this.interval = ( typeof config.stepInterval == "undefined" ) ? 24 : config.stepInterval;
 
+		this.flip = ( typeof config.flip == "undefined" ) ? false : true;
+		this.flipped = false;
+		
 		// create video element 
 		this.video = document.createElement('video');
 		
@@ -259,6 +262,11 @@ class Vid2Canvas {
 	update() {
 		if ( this.video.readyState === this.video.HAVE_ENOUGH_DATA ){
 			// update canvas
+			if( this.flip && !this.flipped ){
+				this.ctx.scale(-1,1);
+				this.flipped = true;
+			}
+			var w = (this.flip) ? this.canvas.width*-1 : this.canvas.width;
 			// this.ctx.drawImage( this.video, 0, 0, this.canvas.width, this.canvas.height );
 			// see: https://mdn.mozillademos.org/files/225/Canvas_drawimage.jpg
 			if( this.cropping ){
@@ -266,12 +274,12 @@ class Vid2Canvas {
 					this.video, 
 					parseFloat(this.sx), parseFloat(this.sy), 
 					parseFloat(this.sWidth), parseFloat(this.sHeight), 
-					0, 0, this.canvas.width, this.canvas.height
+					0, 0, w, this.canvas.height
 				);
 			} else {
 				this.ctx.drawImage(
 					this.video, 
-					0, 0, this.canvas.width, this.canvas.height
+					0, 0, w, this.canvas.height
 					// parseFloat(this.sx), parseFloat(this.sy), 
 					// parseFloat(this.sWidth), parseFloat(this.sHeight)
 				);

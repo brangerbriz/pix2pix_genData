@@ -75,7 +75,7 @@
 				stepInterval: 12, // each step will be 1/12 of a second
 				// stepInterval: 0.25, // each step will be 4 seconds	
 				width: targetSize,
-				height: targetSize			
+				height: targetSize		
 			},function(){
 				
 				// conform to target size
@@ -101,7 +101,8 @@
 				src: 'camera',
 				deviceId: settings.deviceId,
 				width: targetSize,
-				height: targetSize
+				height: targetSize,
+				flip: true
 				// deviceId aquired via: Vid2Canvas.logDevices()
 			}, function(){
 
