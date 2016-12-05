@@ -300,11 +300,15 @@ class Vid2Canvas {
 	}
 
 	step(){
-		return this.video.currentTime += 1/this.interval;
+		if( this.video.currentTime += 1/this.interval < this.video.duration )
+			return this.video.currentTime += 1/this.interval;
+		else 
+			this.video.currentTime = 0;
 	}
 
 	randomFrame(){
-		return this.video.currentTime += Math.random()*this.video.duration;
+		console.log('api called');
+		return this.video.currentTime = Math.random()*this.video.duration;
 	}
 
 		/* 		general methods		*/
