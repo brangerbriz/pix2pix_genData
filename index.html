@@ -202,7 +202,15 @@
 			// var counter = document.querySelector('#counter');
 			// var wait = 0;
 			// var count = 0;
+
+			
+
 			var fileNum = 0;
+			fs.readdir('./data/', (err, files) => {
+				var file = files[ files.length-2 ]; 
+				// length-1 = .gitkeep, length-2 last image
+				fileNum = parseInt( file.substr(0,file.length-4) )+1;
+			});
 			var strip; 	// a/b canvas that saves images
 			var resizeHold = false;
 			var started = false;
@@ -243,7 +251,11 @@
 			function save(){
 				var data = strip.getFrameData();					
 				var buff = new Buffer( data, 'base64' );
-				fs.writeFile('data/'+fileNum+".png", buff );
+				fs.writeFile('data/'+fileNum+".png", buff,function(){
+
+					randomFrame();
+
+				});
 				fileNum++;
 			}
 
