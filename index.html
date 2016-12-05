@@ -44,6 +44,32 @@
 
 			var filepath 	= prompt("path to video file",settings.videoPath);
 
+			function cropToSquareTarget( v2cObj ){
+				var x, y, w, h;
+
+				// largest possible square in original video 
+				largestSquare = ( v2cObj.videoWidth > v2cObj.videoHeight ) ? 
+						v2cObj.videoHeight : v2cObj.videoWidth;
+				
+				w = largestSquare;
+				h = largestSquare;
+				
+				// x && y crop offset
+				if( v2cObj.videoWidth > v2cObj.videoHeight ){ // landscape video
+					x = (v2cObj.videoWidth-largestSquare)/2;
+					y = 0;
+				} else if( v2cObj.videoWidth < v2cObj.videoHeight ) { // portrait video
+					x = 0;
+					y = (v2cObj.videoHeight-largestSquare)/2;
+				} else {
+					x = 0; 
+					y = 0;
+				}
+
+				return { x:x, y:y, w:w, h:h };
+			}
+
+
 			var file = new Vid2Canvas({
 				src: filepath,
 				stepInterval: 12, // each step will be 1/12 of a second
@@ -53,18 +79,8 @@
 			},function(){
 				
 				// conform to target size
-				var x, y, w, h;
-				if( file.videoWidth > targetSize ){
-					x = (file.videoWidth-targetSize)/2;	
-				} else { x = 0; }
-				// if( file.videoHeight > targetSize ){
-				// 	y = (file.videoHeight-targetSize)/2;
-				// } else { y = 0; }
-				y = 0;
-				rw = file.videoWidth - x;
-				rh = file.videoHeight - y;
-				largestSquare = ( rw > rh ) ? rh : rw;
-				file.cropTo(x,y,largestSquare,largestSquare);
+				var crop = cropToSquareTarget( file );
+				file.cropTo( crop.x, crop.y, crop.w, crop.h );
 
 				// append to body && apply CSS
 				file.appendTo('body');				
@@ -90,18 +106,8 @@
 			}, function(){
 
 				// conform to target size
-				var x, y, w, h;
-				if( cam.videoWidth > targetSize ){
-					x = (cam.videoWidth-targetSize)/2;	
-				} else { x = 0; }
-				// if( cam.videoHeight > targetSize ){
-				// 	y = (cam.videoHeight-targetSize)/2;
-				// } else { y = 0; }
-				y = 0
-				rw = cam.videoWidth - x;
-				rh = cam.videoHeight - y;
-				largestSquare = ( rw > rh ) ? rh : rw;
-				cam.cropTo(x,y,largestSquare,largestSquare);
+				var crop = cropToSquareTarget( cam );
+				cam.cropTo( crop.x, crop.y, crop.w, crop.h );
 
 				// conform app window to cam resolution
 				win.on('resize', resize );
@@ -228,7 +234,9 @@
 			}
 
 			function randomFrame(){
+				console.log('button pressed');
 				file.randomFrame(); 
+				console.log( 'new frame', file.time() )
 			}
 
 			function save(){
